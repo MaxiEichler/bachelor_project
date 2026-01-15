@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask SRB GUI Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="container">
+    <h2>Flask SRB GUI Demo</h2>
+
+    <div class="layout">
+
+        <!-- LEFT -->
+        <div class="left">
+            <h2>Breadboard connections</h2>
+            <svg id="breadboard" width="400" height="400"></svg>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right">
+            <h2>User interactions</h2>
+
+            <label>Connect desired routes below</label>
+
+            <div id="xlabel1">X1:</div>
+            <div id="ylabel1">Y1:</div>
+            <div id="xlabel2">X2:</div>
+            <div id="ylabel2">Y2:</div>
+
+            <div id="routinglabel">Routing Options: Disconnected</div>
+
+            <label class="switch">
+                <input type="checkbox" id="routingToggle">
+                <span class="slider round"></span>
+            </label>
+
+            <button id="routeBtn">Upload Code</button>
+
+            <ol id="connectionslist">   
+                <li>test1</li>
+                <li>test2</li>
+            </ol>
+        </div>
+
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
