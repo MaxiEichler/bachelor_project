@@ -30,8 +30,49 @@ address_map = {
     "Y0-X15": "0x0F", "Y1-X15": "0x1F", "Y2-X15": "0x2F", "Y3-X15": "0x3F", "Y4-X15": "0x4F", "Y5-X15": "0x5F", "Y6-X15": "0x6F", "Y7-X15": "0x7F"
 }
 
+# This map shows which connection of ASA are free (0) or used (1)
+status_map = {
+    "AB_1": 0, "AB_2": 0, "AB_3": 0, "AB_4": 0,
+    "AC_1": 0, "AC_2": 0, "AC_3": 0, "AC_4": 0,
+    "AD_1": 0, "AD_2": 0, "AD_3": 0, "AD_4": 0,
+    "BD_1": 0, "BD_2": 0, "BD_3": 0, "BD_4": 0,
+    "CB_1": 0, "CB_2": 0, "CB_3": 0, "CB_4": 0,
+    "CD_1": 0, "CD_2": 0, "CD_3": 0, "CD_4": 0
+}
+
+# This map connects the status_map key to the address_map index of Chip A
+connection_map_chip_A = {
+    "AB_1": 0, "AB_2": 1, "AB_3": 2, "AB_4": 3,
+    "AC_1": 8, "AC_2": 9, "AC_3": 10, "AC_4": 11,
+    "AD_1": 14, "AD_2": 15, "AD_3": 6, "AD_4": 7
+}
+
+# This map connects the status_map key to the address_map index of Chip B
+connection_map_chip_B = {
+    "AB_1": 8, "AB_2": 9, "AB_3": 10, "AB_4": 11,
+    "CB_1": 0, "CB_2": 1, "CB_3": 2, "CB_4": 3,
+    "BD_1": 7, "BD_2": 6, "BD_3": 15, "BD_4": 14
+}
+
+# This map connects the status_map key to the address_map index of Chip C
+connection_map_chip_C = {
+    "AC_1": 11, "AC_2": 10, "AC_3": 9, "AC_4": 8,
+    "CB_1": 14, "CB_2": 15, "CB_3": 6, "CB_4": 7,
+    "CD_1": 0, "CD_2": 1, "CD_3": 2, "CD_4": 3
+}
+
+# This map connects the status_map key to the address_map index of Chip D
+connection_map_chip_D = {
+    "AD_1": 0, "AD_2": 1, "AD_3": 2, "AD_4": 3,
+    "BD_1": 14, "BD_2": 15, "BD_3": 6, "BD_4": 7,
+    "CD_1": 8, "CD_2": 9, "CD_3": 10, "CD_4": 11
+}
+
 def set_ASA(address, state, chip):
     # This function will set switch in the ASA to state
+    # address: string in format "Yx_Xy"
+    # state: 1 (connected) or 0 (disconnected)
+    # chip: A, B, C or D
 
     # var for when strobe pin is triggered
     x = 0
