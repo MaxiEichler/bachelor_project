@@ -34,6 +34,10 @@ with SMBus(Device_Bus) as bus:
     bus.write_byte_data(Device_Address_U303, address_map(IODIRB), 0x00) # Set all pins of port B as output
 
 def switch_expander(BB, mode, state):
+    # BB: breadboard number (1-33)
+    # mode: "data" or "power"
+    # state: "high" or "low"
+
     # get expander address based on breadboard number
     match BB:
         case BB01 | BB02 | BB03 | BB04 | BB05 | BB06 | BB07 | BB08:

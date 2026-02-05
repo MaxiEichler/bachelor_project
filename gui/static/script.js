@@ -7,8 +7,24 @@ document.addEventListener("DOMContentLoaded", () => {
   let firstSelected = null;
 
   /* Breadboard grid */
-  const cols = 17, rows = 10, spacingx = 20, spacingy = 20, extraGap = 20;
+  const cols = 16, rows = 10, spacingx = 20, spacingy = 20, extraGap = 20;
 
+  /* Column labels */
+  for (let c = 0; c < cols; c++) {
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+
+    text.setAttribute("x", 50 + c * spacingx);
+    text.setAttribute("y", 35);  // position above first row
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("font-size", "12");
+    text.setAttribute("fill", "#333");
+
+    text.textContent = c + 1; // column number (1–16)
+
+    svg.appendChild(text);
+  }
+
+  /* Create holes */
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -32,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const hole = e.target;
     hole.setAttribute("fill", "#ff0");
 
+    /* If this is the first hole, just select it. If it's the second, draw a line and reset. */
     if (!firstSelected) {
       firstSelected = hole;
     } else {
@@ -49,6 +66,22 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('xlabel2').innerText = 'X2: ' + hole.getAttribute('cx');
         document.getElementById('ylabel2').innerText = 'Y2: ' + hole.getAttribute('cy');
 
+      /* send x1, y1, x2 and y2 to python script */
+      fetch("/send-coordinates", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          x1: firstSelected.getAttribute("cx"),
+          y1: firstSelected.getAttribute("cy"),
+          x2: hole.getAttribute("cx"),
+          y2: hole.getAttribute("cy")
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Server result:", data.result);
+      });
+
       firstSelected.setAttribute("fill", "#eee");
       hole.setAttribute("fill", "#eee");
       firstSelected = null;
@@ -60,6 +93,17 @@ document.addEventListener("DOMContentLoaded", () => {
     routingLabel.textContent = toggle.checked
       ? "Routing Options: Datalane Two-Way"
       : "Routing Options: Powerlane One-Way";
+  });
+
+  /* Reset button */
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    // Remove all lines
+    const lines = svg.querySelectorAll("line");
+    lines.forEach(line => line.remove());
+    // Reset all holes
+    const holes = svg.querySelectorAll("circle");
+    holes.forEach(hole => hole.setAttribute("fill", "#eee"));
+    firstSelected = null;
   });
 
 });

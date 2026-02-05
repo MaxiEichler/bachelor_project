@@ -1,15 +1,16 @@
 # This code will handle the ASA (Analogue Swich Array) hardware component.
 import time
-import RPI.GPIO as GPIO
+import RPi.GPIO as GPIO
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(11, GPIO.OUT)  # Clock pin
-GPIO.setup(24, GPIO.OUT)  # Data out pin
-GPIO.setup(17, GPIO.OUT)   # Strobe A pin
-GPIO.setup(18, GPIO.OUT)   # Strobe B pin
-GPIO.setup(19, GPIO.OUT)   # Strobe C pin
-GPIO.setup(20, GPIO.OUT)   # Strobe D pin
-GPIO.setup(26, GPIO.OUT)   # Reset pin
+def init_GPIO():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(11, GPIO.OUT)  # Clock pin
+    GPIO.setup(24, GPIO.OUT)  # Data out pin
+    GPIO.setup(17, GPIO.OUT)   # Strobe A pin
+    GPIO.setup(18, GPIO.OUT)   # Strobe B pin
+    GPIO.setup(19, GPIO.OUT)   # Strobe C pin
+    GPIO.setup(20, GPIO.OUT)   # Strobe D pin
+    GPIO.setup(26, GPIO.OUT)   # Reset pin
 
 address_map = {
     "Y0-X0": "0x00", "Y1-X0": "0x10", "Y2-X0": "0x20", "Y3-X0": "0x30", "Y4-X0": "0x40", "Y5-X0": "0x50", "Y6-X0": "0x60", "Y7-X0": "0x70",
@@ -99,10 +100,14 @@ def set_ASA(address, state, chip):
 
     # Determine strobe pin based on chip
     match chip:
-        case A: strobe = 17 # Strobe A
-        case B: strobe = 18 # Strobe B
-        case C: strobe = 19 # Strobe C
-        case D: strobe = 20 # Strobe D
+        case "A": 
+            strobe = 17 # Strobe A
+        case "B":  
+            strobe = 18 # Strobe B
+        case "C": 
+            strobe = 19 # Strobe C
+        case "D": 
+            strobe = 20 # Strobe D
 
     # Send data to ASA via 3 wire SPI
     for i in list(binary_7bit):
