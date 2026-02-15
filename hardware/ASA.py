@@ -1,6 +1,10 @@
 # This code will handle the ASA (Analogue Swich Array) hardware component.
 import time
+from datetime import datetime
 import RPi.GPIO as GPIO
+
+def log(message):
+    print(f"{datetime.now().strftime('%M:%S.%f')[:-3]} - {message}")
 
 def init_GPIO():
     GPIO.setmode(GPIO.BCM)
@@ -10,7 +14,13 @@ def init_GPIO():
     GPIO.setup(18, GPIO.OUT)   # Strobe B pin
     GPIO.setup(19, GPIO.OUT)   # Strobe C pin
     GPIO.setup(20, GPIO.OUT)   # Strobe D pin
-    GPIO.setup(26, GPIO.OUT)   # Reset pin
+    GPIO.setup(25, GPIO.OUT)   # Reset pin
+    GPIO.output(25, 1)
+    log(f"Reset: 1")
+    time.sleep(0.1)
+    GPIO.output(25, 0)
+    log(f"Reset: 0")
+    print("GPIO initialized")
 
 address_map = {
     "Y0-X0": "0x00", "Y1-X0": "0x10", "Y2-X0": "0x20", "Y3-X0": "0x30", "Y4-X0": "0x40", "Y5-X0": "0x50", "Y6-X0": "0x60", "Y7-X0": "0x70",
@@ -69,57 +79,166 @@ connection_map_chip_D = {
     "CD_1": 8, "CD_2": 9, "CD_3": 10, "CD_4": 11
 }
 
-def set_ASA(address, state, chip):
-    # This function will set switch in the ASA to state
-    # address: string in format "Yx_Xy"
-    # state: 1 (connected) or 0 (disconnected)
-    # chip: A, B, C or D
+"""
 
-    # var for when strobe pin is triggered
+
+def set_ASA(address, state, chip):
+
     x = 0
 
-    # Turn hex number into a fixed 7 bit binary number
+    log(f"address: {address}")
+    log(f"state: {state}")
+    log(f"chip: {chip}")
+
+    # Convert hex string to integer
     hex_number = address_map[address]
     value = int(hex_number, 16)
 
     # Append state bit
     if state == 1:
-        dat = (value << 1) | 1  # Append 1 to the right
-    elif state == 0:
-        dat = value << 1        # Append 0 to the right
+        dat = (value << 1) | 1
+    else:
+        dat = value << 1
 
-    # Format to 8 bit binary string
     binary_7bit = format(dat, '08b')
+    log(f"binary 8 bit: {binary_7bit}")
 
     # Reset ASA chip before sending data
-    GPIO.output(17, 0)  # Strobe A
-    GPIO.output(18, 0)  # Strobe B
-    GPIO.output(19, 0)  # Strobe C
-    GPIO.output(20, 0)  # Strobe D
-    GPIO.output(24, 0)  # Data out
+    GPIO.output(17, 0)
+    GPIO.output(18, 0)
+    GPIO.output(19, 0)
+    GPIO.output(20, 0)
+    GPIO.output(24, 0)
 
-    # Determine strobe pin based on chip
+    time.sleep(0.02)
+
+    # Determine strobe pin
     match chip:
-        case "A": 
-            strobe = 17 # Strobe A
-        case "B":  
-            strobe = 18 # Strobe B
-        case "C": 
-            strobe = 19 # Strobe C
-        case "D": 
-            strobe = 20 # Strobe D
+        case "A":
+            strobe = 17
+        case "B":
+            strobe = 18
+        case "C":
+            strobe = 19
+        case "D":
+            strobe = 20
+        case _:
+            raise ValueError("Invalid chip selected")
 
-    # Send data to ASA via 3 wire SPI
-    for i in list(binary_7bit):
-        GPIO.output(11, 0)  #clock low
-        time.sleep(0.01)
-        GPIO.output(24, i)  #data out
-        GPIO.output(11, 1)  #clock high
-        time.sleep(0.01)
-        x = x +1
+    # Send data
+    for i in binary_7bit:
+
+        GPIO.output(11, 0)  # Clock low
+        log("Clock low")
+
+        time.sleep(0.05)
+
+        GPIO.output(24, int(i))  # Data out
+        log(f"Data bit: {i}")
+
+        if x == 7:
+            GPIO.output(11, 0)
+        else:
+            GPIO.output(11, 1)
+            time.sleep(0.05)
+            log("Clock high")
+
+        x += 1
+        #log(f"x: {x}")
+
         if x == 8:
-            GPIO.output(strobe, 1)  # Strobe high
-            time.sleep(0.01)
-            GPIO.output(strobe, 0)  # Strobe low
-            time.sleep(0.01)
+            time.sleep(0.04)
+
+            GPIO.output(strobe, 1)
+            log(f"Strobe HIGH on pin {strobe}")
+
+            time.sleep(0.02)
+
+            GPIO.output(strobe, 0)
+            log(f"Strobe LOW on pin {strobe}")
+
+            time.sleep(0.02)
             x = 0
+
+"""
+
+def set_ASA(address, state, chip):
+    # address: Y0-X0
+    # state: 1 or 0
+    # chip: "A", "B", "C" or "D"
+
+    #log(f"address: {address}")
+    #log(f"state: {state}")
+    #log(f"chip: {chip}")
+
+    # Convert hex string to integer
+    value = int(address_map[address], 16)
+
+    # Determine strobe pin
+    match chip:
+        case "A":
+            strobe = 17
+        case "B":
+            strobe = 18
+        case "C":
+            strobe = 19
+        case "D":
+            strobe = 20
+        case _:
+            raise ValueError("Invalid chip selected")
+
+    # STB LOW
+    GPIO.output(strobe, 0)
+    #log("STB 0")
+
+    # DAT LOW
+    GPIO.output(24, 0)
+    #log("DAT 0")
+
+    time.sleep(0.02)
+
+    # Send 8 address bits (MSB first)
+    for _ in range(8):
+
+        GPIO.output(11, 0)  # SK LOW
+        #log("SK 0")
+        time.sleep(0.01)
+
+        if value & 0x80:
+            GPIO.output(24, 1)
+            #log("DAT 1")
+        else:
+            GPIO.output(24, 0)
+            #log("DAT 0")
+
+        GPIO.output(11, 1)  # SK HIGH
+        #log("SK 1")
+        time.sleep(0.05)
+
+        #print("value befor: ", value)
+        value <<= 1
+        #print("value after: ", value)
+
+    # Final clock low
+    GPIO.output(11, 0)
+    #log("SK 0")
+
+    # Send state bit
+    if state == 1:
+        GPIO.output(24, 1)
+        #log("DAT 1")
+    else:
+        GPIO.output(24, 0)
+        #log("DAT 0")
+
+    time.sleep(0.04)
+
+    # STB HIGH
+    GPIO.output(strobe, 1)
+    #log("STB 1")
+    time.sleep(0.02)
+
+    # STB LOW
+    GPIO.output(strobe, 0)
+    #log("STB 0")
+    time.sleep(0.02)

@@ -48,6 +48,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const hole = e.target;
     hole.setAttribute("fill", "#ff0");
 
+
+    const isDataLane = toggle.checked;
+    const lineColor = isDataLane ? "blue" : "red";  
+    // blue = data, red = power (change if you prefer)
+  
     /* If this is the first hole, just select it. If it's the second, draw a line and reset. */
     if (!firstSelected) {
       firstSelected = hole;
@@ -57,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
       line.setAttribute("y1", firstSelected.getAttribute("cy"));
       line.setAttribute("x2", hole.getAttribute("cx"));
       line.setAttribute("y2", hole.getAttribute("cy"));
-      line.setAttribute("stroke", "red");
+      line.setAttribute("stroke", lineColor);
       line.setAttribute("stroke-width", "2");
       svg.appendChild(line);
 
@@ -74,7 +79,8 @@ document.addEventListener("DOMContentLoaded", () => {
           x1: firstSelected.getAttribute("cx"),
           y1: firstSelected.getAttribute("cy"),
           x2: hole.getAttribute("cx"),
-          y2: hole.getAttribute("cy")
+          y2: hole.getAttribute("cy"),
+          routeType: isDataLane ? "data" : "power"
         })
       })
       .then(response => response.json())
@@ -106,4 +112,34 @@ document.addEventListener("DOMContentLoaded", () => {
     firstSelected = null;
   });
 
+  /* Remove last Route */
+  document.getElementById("removelast").addEventListener("click", () => {
+
+    const lines = svg.querySelectorAll("line");
+
+    if (lines.length > 0) {
+      const lastLine = lines[lines.length - 1];
+
+      // Optionally grab its coordinates before removing
+      const x1 = lastLine.getAttribute("x1");
+      const y1 = lastLine.getAttribute("y1");
+      const x2 = lastLine.getAttribute("x2");
+      const y2 = lastLine.getAttribute("y2");
+
+      lastLine.remove();
+
+      // Send coordinates of removed line to backend
+      fetch("/remove-route", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ x1, y1, x2, y2 })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Remove route result:", data.result);
+      });
+    }
+
+    firstSelected = null;
+  });
 });

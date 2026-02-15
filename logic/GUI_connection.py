@@ -7,6 +7,11 @@ connection_map_x = {
 }
 
 def process_coordinates(x1, y1, x2, y2):
+    # x1: 50, 70, 90, ...
+    # y1:
+    # x2: 50, 70, 90, ...
+    # y2: 
+
     print("Received coordinates:", x1, y1, x2, y2)
 
     connection_point_1 = connection_map_x[x1]

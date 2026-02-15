@@ -1,9 +1,12 @@
 # This program will manage the routing of the traces
 import hardware.ASA as ASA
 from collections import deque, defaultdict
+from hardware.I2C import switch_expander
+
 
 # Create a graph to represent the connections
 graph = defaultdict(list)
+last_connection = ""
 
 # Add connections to the graph for BFS
 def add_connection(node1, node2, connection_id):
@@ -62,19 +65,26 @@ def map_connection_to_address(chip_start, chip_end, connection, start, end):
             end = int(end) - 26 # BB25 --> Y0
 
     # Create startpoint and endpoint strings for ASA.address_map
-    startpoint = "Y" + str(start) + "_" + "X" + str(address_index_start)
-    endpoint = "Y" + str(end) + "_" + "X" + str(address_index_end)
+    startpoint = "Y" + str(start) + "-" + "X" + str(address_index_start)
+    endpoint = "Y" + str(end) + "-" + "X" + str(address_index_end)
     return startpoint, endpoint
 
 # Block directions
 def block_connection(id):
     # id: connection id e.g. "AB_1"
     ASA.status_map[id] = 1  # Mark connection as used
+    last_connection = id
+    print("last connection: ", last_connection)
 
 # Unblock directions
 def unblock_connection(id):
     # id: connection id e.g. "AB_1"
     ASA.status_map[id] = 0  # Mark connection as free
+
+# unblocks the last connection
+def unblock_last_connection():
+    ASA.status_map[last_connection] = 0
+    print("last connection unblocked: ", last_connection)
 
 # Find shortest path with the help of BFS
 def find_path(start, target):
@@ -89,6 +99,7 @@ def find_path(start, target):
         current, path = queue.popleft()
 
         if current == target:
+            print("same path: ", path)
             return path
 
         if current in visited:
@@ -102,27 +113,32 @@ def find_path(start, target):
 
     return None
 
-def set_path(pin_start, pin_end):
+def set_path(pin_start, pin_end, route_type):
     # pin_start: e.g. "1" (Y1)
     # pin_end: e.g. "10" (Y10)
     # both variables will come from the GUI
 
     print("Received pins:", pin_start, pin_end)
 
+    # set MOSFETs for data or power trace
+    switch_expander(pin_start, "data")  # is always data since the signal otherwise would need to go through the op_amp
+    switch_expander(pin_end, route_type)
+
     match pin_start:
         case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8: start_chip = 'A'
-        case 11 | 12 | 13 | 14 | 15 | 16 | 17 |18: start_chip = 'B'
-        case 21 | 22 | 23 | 24 | 25 | 26 | 27 |28: start_chip = 'C'
-        case 31 | 32 | 33 | 34 | 35 | 36 | 37 |38: start_chip = 'D'
+        case 9 | 10 | 11 | 12 | 13 | 14 | 15 |16: start_chip = 'B'
+        case 18 | 19 | 20 | 21 | 22 | 23 | 24 |25: start_chip = 'C'
+        case 26 | 27 | 28 | 29 | 30 | 31 | 32 |33: start_chip = 'D'
 
     match pin_end:
         case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8: end_chip = 'A'
-        case 11 | 12 | 13 | 14 | 15 | 16 | 17 |18: end_chip = 'B'
-        case 21 | 22 | 23 | 24 | 25 | 26 | 27 |28: end_chip = 'C'
-        case 31 | 32 | 33 | 34 | 35 | 36 | 37 |38: end_chip = 'D'
+        case 9 | 10 | 11 | 12 | 13 | 14 | 15 |16: end_chip = 'B'
+        case 18 | 19 | 20 | 21 | 22 | 23 | 24 |25: end_chip = 'C'
+        case 26 | 27 | 28 | 29 | 30 | 31 | 32 |33: end_chip = 'D'
 
     path = find_path(start_chip, end_chip)  # Example: find path from A to D
 
+    # When a path is found split it into "A", "B", "AB_1"
     if path:
         print("Path found:")
         for step in path:
@@ -140,7 +156,7 @@ def set_path(pin_start, pin_end):
         print("Address 2:", address_end)
         print("End: ", end)
 
-        #ASA.set_ASA(address_start, 1, start)  # Set startpoint to 1 (connected)
-        #ASA.set_ASA(address_end, 1, end)      # Set endpoint to
+        ASA.set_ASA(address_start, 1, start)  # Set startpoint to 1 (connected)
+        ASA.set_ASA(address_end, 1, end)      # Set endpoint to
 
         block_connection(connection)  # Mark connection as used in status_map
