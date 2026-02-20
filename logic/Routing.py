@@ -121,8 +121,14 @@ def set_path(pin_start, pin_end, route_type):
     print("Received pins:", pin_start, pin_end)
 
     # set MOSFETs for data or power trace
-    switch_expander(pin_start, "data")  # is always data since the signal otherwise would need to go through the op_amp
-    switch_expander(pin_end, route_type)
+    switch_expander(pin_start, "power", 0)  # make sure power is off
+    switch_expander(pin_start, "data", 1)  # is always data since the signal otherwise would need to go through the op_amp
+    if route_type == "power":
+        switch_expander(pin_end, "data", 0)  # make sure data is off
+        switch_expander(pin_end, "power", 1)  # set routetype 
+    elif route_type == "data":
+        switch_expander(pin_end, "power", 0)  # make sure power is off
+        switch_expander(pin_end, "data", 1)  # set routetype
 
     match pin_start:
         case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8: start_chip = 'A'

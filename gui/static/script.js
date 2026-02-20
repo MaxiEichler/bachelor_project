@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let firstSelected = null;
 
   /* Breadboard grid */
-  const cols = 16, rows = 10, spacingx = 20, spacingy = 20, extraGap = 20;
+  const cols = 16, rows = 5, spacingx = 20, spacingy = 20;
 
   /* Column labels */
   for (let c = 0; c < cols; c++) {

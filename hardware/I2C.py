@@ -9,8 +9,6 @@ bus = SMBus(1)
 Device_Bus = 1  
 Device_Address_U300 = 0x20 #0b00100000 # I2C address of expander U300 for BB01 - BB08
 Device_Address_U301 = 0x21 # I2C address of expander U301 for BB09 - BB16
-Device_Address_U302 = 0x22 # I2C address of expander U302 for BB18 - BB25
-Device_Address_U303 = 0x23 # I2C address of expander U303 for BB26 - BB33
 
 address_map = { # MCP23017 Registe Addresses Table 3-1 
     "IODIRA": 0x00,     "IODIRB": 0x01,     "IPOLA": 0x02,      "IPOLB": 0x03,
@@ -21,61 +19,70 @@ address_map = { # MCP23017 Registe Addresses Table 3-1
     "OLATA": 0x14,      "OLATB": 0x15
 }
 
+BB_data_map = {
+    1: 0, 2: 2, 3: 4, 4: 6,
+    5: 0, 6: 2, 7: 4, 8: 6,
+    9: 0, 10: 2, 11: 4, 12: 6,
+    13: 0, 14: 2, 15: 4, 16: 6
+}
+
+BB_power_map = {
+    1: 1, 2: 3, 3: 5, 4: 7,
+    5: 1, 6: 3, 7: 5, 8: 7,
+    9: 1, 10: 3, 11: 5, 12: 7, 
+    13: 1, 14: 3, 15: 5, 16: 7
+}
+
 # Initialize I2C bus and configure expanders
 def init_I2C():
     #with SMBus(Device_Bus) as bus:
     # Set all pins of all expanders as outputs
+    bus.write_byte_data(Device_Address_U300, address_map["IOCON"], 0x00) # Set IOCON to BANK 1
+    #bus.write_byte_data(Device_Address_U301, address_map["IOCON"], 0x00) # Set IOCON to BANK 1
     bus.write_byte_data(Device_Address_U300, address_map["IODIRA"], 0x00) # Set all pins of port A as output
     bus.write_byte_data(Device_Address_U300, address_map["IODIRB"], 0x00) # Set all pins of port B as output
-    bus.write_byte_data(Device_Address_U301, address_map["IODIRA"], 0x00) # Set all pins of port A as output
-    bus.write_byte_data(Device_Address_U301, address_map["IODIRB"], 0x00) # Set all pins of port B as output
-    #bus.write_byte_data(Device_Address_U302, address_map["IODIRA"], 0x00) # Set all pins of port A as output
-    #bus.write_byte_data(Device_Address_U302, address_map["IODIRB"], 0x00) # Set all pins of port B as output
-    #bus.write_byte_data(Device_Address_U303, address_map["IODIRA"], 0x00) # Set all pins of port A as output
-    #bus.write_byte_data(Device_Address_U303, address_map["IODIRB"], 0x00) # Set all pins of port B as output
+    #bus.write_byte_data(Device_Address_U301, address_map["IODIRA"], 0x00) # Set all pins of port A as output
+    #bus.write_byte_data(Device_Address_U301, address_map["IODIRB"], 0x00) # Set all pins of port B as output
     print("I2C initialized and expanders configured as outputs")
 
-def switch_expander(BB, mode):
-    # BB: breadboard number (1-33)
-    # mode: "data" or "power"
-    state = 1
-
+def switch_expander(BB, mode, state):
     print("BB: ", BB, "mode: ", mode)
 
-    # get expander address based on breadboard number
-    match BB:
-        case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8:
-            expander_address = Device_Address_U300
-            local_pin = BB - 1
-        case 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16:
-            expander_address = Device_Address_U301
-            local_pin = BB - 9
-        case 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25:
-            expander_address = Device_Address_U302
-            local_pin = BB - 18
-        case 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33:
-            expander_address = Device_Address_U303
-            local_pin = BB - 26
+    # Determine which chip
+    if BB <= 8:
+        exp_addr = Device_Address_U300
+    elif BB <= 16:
+        exp_addr = Device_Address_U301
+    else:
+        print("BB out of range")
+        return
 
-    # read current GPIO registar state
-    if mode == "power":
-        old_value = bus.read_byte_data(expander_address, address_map["GPIOA"])
-    elif mode == "data":
-        old_value = bus.read_byte_data(expander_address, address_map["GPIOB"])
+    # Determine which register (Port A for 1-4 and 9-12, Port B for 5-8 and 13-16)
+    # Using your logic: 1-4=A, 5-8=B, 9-12=A, 13-16=B
+    if (1 <= BB <= 4) or (9 <= BB <= 12):
+        reg_name = "GPIOA"
+    else:
+        reg_name = "GPIOB"
+    
+    reg_addr = address_map[reg_name]
 
-    # write new GPIO registar state
-    if state == 1:
-        # Set pin high
-        new_value = old_value | (1 << BB)
-    elif state == 0:
-        # Set pin low
-        new_value = old_value & ~(1 << BB)
+    # Get the local pin from your maps
+    if mode == "data":
+        local_pin = BB_data_map[BB]
+    elif mode == "power":
+        local_pin = BB_power_map[BB]
 
-    # send new register value to expander
-    if mode == "power":
-        bus.write_byte_data(expander_address, address_map["GPIOA"], new_value)
-        print("expander address: ", expander_address, "GPIOA: ", new_value)
-    elif mode == "data":
-        bus.write_byte_data(expander_address, address_map["GPIOB"], new_value)
-        print("expander address: ", expander_address, "GPIOB: ", new_value)
+    # Read - Modify - Write
+    try:
+        old_value = bus.read_byte_data(exp_addr, reg_addr)
+        
+        if state == 1:
+            new_value = old_value | (1 << local_pin)
+        else:
+            new_value = old_value & ~(1 << local_pin)
 
+        bus.write_byte_data(exp_addr, reg_addr, new_value)
+        print(f"BB{BB} [{mode}] set to {state} on {hex(exp_addr)} {reg_name} (Val: {bin(new_value)})")
+        
+    except Exception as e:
+        print(f"I2C Error: {e}")

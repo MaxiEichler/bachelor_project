@@ -84,6 +84,7 @@ input:checked + .slider:before {
     flex-direction: column;
     gap: 12px;   /* space between switch and button */
     margin-top: 10px;
+    align-items: flex-start;
 }
 
 .routing-controls button {
