@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     text.setAttribute("text-anchor", "middle");
     text.setAttribute("font-size", "12");
     text.setAttribute("fill", "#333");
-
+    
     text.textContent = c + 1; // column number (1–16)
 
     svg.appendChild(text);

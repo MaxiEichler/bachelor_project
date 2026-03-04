@@ -86,6 +86,33 @@ def unblock_last_connection():
     ASA.status_map[last_connection] = 0
     print("last connection unblocked: ", last_connection)
 
+def find_path(start, target):
+    queue = deque()
+    # Add neighbors of the start node first to force movement
+    for neighbor, conn_id in graph[start]:
+        if ASA.status_map[conn_id] == 0:
+            queue.append((neighbor, [(start, neighbor, conn_id)]))
+    
+    visited = set()
+
+    while queue:
+        current, path = queue.popleft()
+
+        if current == target:
+            return path
+
+        if current in visited:
+            continue
+
+        visited.add(current)
+
+        for neighbor, conn_id in graph[current]:
+            if ASA.status_map[conn_id] == 0:
+                queue.append((neighbor, path + [(current, neighbor, conn_id)]))
+
+    return None
+
+"""    
 # Find shortest path with the help of BFS
 def find_path(start, target):
     # start: starting node "A", "B", "C" or "D"
@@ -112,13 +139,14 @@ def find_path(start, target):
                 queue.append((neighbor, path + [(current, neighbor, conn_id)]))
 
     return None
-
+"""
 def set_path(pin_start, pin_end, route_type):
     # pin_start: e.g. "1" (Y1)
     # pin_end: e.g. "10" (Y10)
     # both variables will come from the GUI
 
-    print("Received pins:", pin_start, pin_end)
+    #print("Received pins:", pin_start, pin_end)
+    #print("route type: ", route_type)
 
     # set MOSFETs for data or power trace
     switch_expander(pin_start, "power", 0)  # make sure power is off
@@ -157,12 +185,15 @@ def set_path(pin_start, pin_end, route_type):
         start, end, connection = step
         address_start, address_end = map_connection_to_address(start_chip, end_chip, connection, str(pin_start), str(pin_end)) # Map to ASA addresses   
 
-        print("Address 1:", address_start)
-        print("Start: ", start)
-        print("Address 2:", address_end)
-        print("End: ", end)
+        #print("Address 1:", address_start)
+        #print("Start: ", start)
+        #print("Address 2:", address_end)
+        #print("End: ", end)
 
+        #print("Set Start: ")
         ASA.set_ASA(address_start, 1, start)  # Set startpoint to 1 (connected)
+        #print("Set End: ")
         ASA.set_ASA(address_end, 1, end)      # Set endpoint to
 
         block_connection(connection)  # Mark connection as used in status_map
+        #print("Connection blocked: ", ASA.status_map)

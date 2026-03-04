@@ -12,7 +12,7 @@ def home():
 @app.route("/send-coordinates", methods=["POST"])
 def receive_coordinates():
     data = request.json  # receive JSON from JS
-
+    
     x1 = data.get("x1")
     y1 = data.get("y1")
     x2 = data.get("x2")

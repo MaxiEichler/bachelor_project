@@ -3,6 +3,9 @@ import time
 from datetime import datetime
 import RPi.GPIO as GPIO
 
+
+delay = 1
+
 def log(message):
     print(f"{datetime.now().strftime('%M:%S.%f')[:-3]} - {message}")
 
@@ -15,12 +18,13 @@ def init_GPIO():
     GPIO.setup(19, GPIO.OUT)   # Strobe C pin
     GPIO.setup(20, GPIO.OUT)   # Strobe D pin
     GPIO.setup(25, GPIO.OUT)   # Reset pin
-    GPIO.output(25, 1)
+    GPIO.output(25, 1)    
     log(f"Reset: 1")
     time.sleep(0.1)
     GPIO.output(25, 0)
     log(f"Reset: 0")
     print("GPIO initialized")
+
 
 address_map = {
     "Y0-X0": "0x00", "Y1-X0": "0x10", "Y2-X0": "0x20", "Y3-X0": "0x30", "Y4-X0": "0x40", "Y5-X0": "0x50", "Y6-X0": "0x60", "Y7-X0": "0x70",
@@ -84,12 +88,15 @@ def set_ASA(address, state, chip):
     # state: 1 or 0
     # chip: "A", "B", "C" or "D"
 
-    #log(f"address: {address}")
-    #log(f"state: {state}")
-    #log(f"chip: {chip}")
+    log(f"address: {address}")
+    log(f"state: {state}")
+    log(f"chip: {chip}")
+
+    #print("statusmap at the start: ", status_map))
 
     # Convert hex string to integer
     value = int(address_map[address], 16)
+    #print("value from address_map: ", value)
 
     # Determine strobe pin
     match chip:
@@ -112,14 +119,14 @@ def set_ASA(address, state, chip):
     GPIO.output(24, 0)
     #log("DAT 0")
 
-    time.sleep(0.02)
+    time.sleep(delay)
 
     # Send 8 address bits (MSB first)
     for _ in range(8):
 
         GPIO.output(11, 0)  # SK LOW
         #log("SK 0")
-        time.sleep(0.01)
+        time.sleep(delay)
 
         if value & 0x80:
             GPIO.output(24, 1)
@@ -130,7 +137,7 @@ def set_ASA(address, state, chip):
 
         GPIO.output(11, 1)  # SK HIGH
         #log("SK 1")
-        time.sleep(0.05)
+        time.sleep(delay)
 
         #print("value befor: ", value)
         value <<= 1
@@ -148,14 +155,17 @@ def set_ASA(address, state, chip):
         GPIO.output(24, 0)
         #log("DAT 0")
 
-    time.sleep(0.04)
+    time.sleep(delay)
 
     # STB HIGH
     GPIO.output(strobe, 1)
     #log("STB 1")
-    time.sleep(0.02)
+    time.sleep(delay)
 
     # STB LOW
     GPIO.output(strobe, 0)
     #log("STB 0")
-    time.sleep(0.02)
+    time.sleep(delay)
+
+#print("statusmap at the end: ", status_map)
+
