@@ -1,27 +1,37 @@
 # This code will handle the ASA (Analogue Swich Array) hardware component.
 import time
 from datetime import datetime
-import RPi.GPIO as GPIO
+import pigpio
 
+pi = pigpio.pi()
 
-delay = 1
+delay = 0.01
+
+CLK = 11
+STB_A = 17
+STB_B = 18
+STB_C = 19
+STB_D = 20
+DAT = 24
+RST = 25
+
 
 def log(message):
     print(f"{datetime.now().strftime('%M:%S.%f')[:-3]} - {message}")
 
 def init_GPIO():
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(11, GPIO.OUT)  # Clock pin
-    GPIO.setup(24, GPIO.OUT)  # Data out pin
-    GPIO.setup(17, GPIO.OUT)   # Strobe A pin
-    GPIO.setup(18, GPIO.OUT)   # Strobe B pin
-    GPIO.setup(19, GPIO.OUT)   # Strobe C pin
-    GPIO.setup(20, GPIO.OUT)   # Strobe D pin
-    GPIO.setup(25, GPIO.OUT)   # Reset pin
-    GPIO.output(25, 1)    
+    pi.set_mode(CLK, pigpio.OUTPUT)
+    pi.set_mode(STB_A, pigpio.OUTPUT)
+    pi.set_mode(STB_B, pigpio.OUTPUT)
+    pi.set_mode(STB_C, pigpio.OUTPUT)
+    pi.set_mode(STB_D, pigpio.OUTPUT)
+    pi.set_mode(DAT, pigpio.OUTPUT)
+    pi.set_mode(RST, pigpio.OUTPUT)
+
+    
     log(f"Reset: 1")
     time.sleep(0.1)
-    GPIO.output(25, 0)
+    pi.write(RST, 1)
     log(f"Reset: 0")
     print("GPIO initialized")
 
@@ -88,6 +98,11 @@ def set_ASA(address, state, chip):
     # state: 1 or 0
     # chip: "A", "B", "C" or "D"
 
+    #ypi.write(RST, 1)
+    #time.sleep(delay)
+    pi.write(RST, 0)
+    time.sleep(delay)
+
     log(f"address: {address}")
     log(f"state: {state}")
     log(f"chip: {chip}")
@@ -96,76 +111,182 @@ def set_ASA(address, state, chip):
 
     # Convert hex string to integer
     value = int(address_map[address], 16)
-    #print("value from address_map: ", value)
+
+    print("value from address_map: ", bin(value))
+
+    value = (value << 1) | state
+
+    print("value after shift: ", bin(value))
 
     # Determine strobe pin
     match chip:
         case "A":
-            strobe = 17
+            STB = 17
         case "B":
-            strobe = 18
+            STB = 18
         case "C":
-            strobe = 19
+            STB = 19
         case "D":
-            strobe = 20
+            STB = 20
         case _:
             raise ValueError("Invalid chip selected")
 
     # STB LOW
-    GPIO.output(strobe, 0)
+    pi.write(STB, 0)
     #log("STB 0")
-
-    # DAT LOW
-    GPIO.output(24, 0)
-    #log("DAT 0")
-
     time.sleep(delay)
 
-    # Send 8 address bits (MSB first)
-    for _ in range(8):
+    # DAT LOW
+    pi.write(DAT, 0)
+    #log("DAT 0")
+    time.sleep(delay)
 
-        GPIO.output(11, 0)  # SK LOW
+    pi.write(CLK, 0)
+    #log("CLK 0")
+    time.sleep(delay)
+
+    print("start sending data: ")
+    # Send 8 address bits (MSB first)
+    for _ in range(7):
+
+        #pi.write(CLK, 0)  # SK LOW
         #log("SK 0")
-        time.sleep(delay)
+        #time.sleep(delay)
 
         if value & 0x80:
-            GPIO.output(24, 1)
-            #log("DAT 1")
+            pi.write(DAT, 1)
+            log("DAT 1")
+            time.sleep(delay)
         else:
-            GPIO.output(24, 0)
-            #log("DAT 0")
+            pi.write(DAT, 0)
+            log("DAT 0")
+            time.sleep(delay)
 
-        GPIO.output(11, 1)  # SK HIGH
-        #log("SK 1")
+        pi.write(CLK, 0)  # SK HIGH
+       # log("CLK 0")
+        time.sleep(delay)
+
+        pi.write(CLK, 1)
+        #log("CLK 1")
         time.sleep(delay)
 
         #print("value befor: ", value)
         value <<= 1
         #print("value after: ", value)
 
-    # Final clock low
-    GPIO.output(11, 0)
-    #log("SK 0")
+    pi.write(CLK, 0)  # SK LOW
+    #log("CLK 0")
+    time.sleep(delay)
 
     # Send state bit
     if state == 1:
-        GPIO.output(24, 1)
-        #log("DAT 1")
+        pi.write(DAT, 1)
+        log("DAT 1")
+        time.sleep(delay)
     else:
-        GPIO.output(24, 0)
-        #log("DAT 0")
+        pi.write(DAT, 0)
+        log("DAT 0")
+        time.sleep(delay)
 
+    pi.write(STB, 0)
+    #log("STB 0")
     time.sleep(delay)
 
     # STB HIGH
-    GPIO.output(strobe, 1)
+    pi.write(STB, 1)
     #log("STB 1")
     time.sleep(delay)
 
     # STB LOW
-    GPIO.output(strobe, 0)
+    pi.write(STB, 0)
     #log("STB 0")
     time.sleep(delay)
 
+    pi.write(DAT, 0)
+    #log("DAT 0")
+    time.sleep(delay)
 #print("statusmap at the end: ", status_map)
 
+def reset_ASA():
+    pi.write(RST, 1)
+    time.sleep(delay)
+    pi.write(RST, 0)
+    time.sleep(delay)
+    log("ASA reset complete")
+
+def manualset():
+    pi.write(RST, 1)
+    time.sleep(delay)
+    pi.write(RST, 0)
+    time.sleep(delay)
+
+    pi.write(STB_A, 0)
+    time.sleep(delay)
+    pi.write(DAT, 0)
+    time.sleep(delay)
+    pi.write(CLK, 0)
+    time.sleep(delay)
+
+    # Y0 X0 = 0x00 -> 0b00000001
+    #1
+    pi.write(DAT, 0)
+    time.sleep(delay)
+    pi.write(CLK, 1)
+    time.sleep(delay)
+    #2
+    pi.write(DAT, 0)
+    time.sleep(delay)
+    pi.write(CLK, 0)
+    time.sleep(delay)
+    pi.write(CLK, 1)
+    time.sleep(delay)
+    #3
+    pi.write(DAT, 0)
+    time.sleep(delay)
+    pi.write(CLK, 0)
+    time.sleep(delay)
+    pi.write(CLK, 1)
+    time.sleep(delay)
+    #4
+    pi.write(DAT, 0)
+    time.sleep(delay)
+    pi.write(CLK, 0)
+    time.sleep(delay)
+    pi.write(CLK, 1)
+    time.sleep(delay)
+    #5
+    pi.write(DAT, 0)
+    time.sleep(delay)
+    pi.write(CLK, 0)
+    time.sleep(delay)
+    pi.write(CLK, 1)
+    time.sleep(delay)
+    #6
+    pi.write(DAT, 0)
+    time.sleep(delay)
+    pi.write(CLK, 0)
+    time.sleep(delay)
+    pi.write(CLK, 1)
+    time.sleep(delay)
+    #7
+    pi.write(DAT, 0)
+    time.sleep(delay)
+    pi.write(CLK, 0)
+    time.sleep(delay)
+    pi.write(CLK, 1)
+    time.sleep(delay)
+    pi.write(CLK, 0)
+    time.sleep(delay)
+    #8
+    pi.write(DAT, 1)
+    time.sleep(delay)
+    pi.write(STB_B, 0)
+    time.sleep(delay)
+    pi.write(STB_B, 1)
+    time.sleep(delay)
+    pi.write(STB_B, 0)
+    time.sleep(delay)
+    pi.write(DAT, 0)
+    time.sleep(delay)
+
+    print("Manual set complete")

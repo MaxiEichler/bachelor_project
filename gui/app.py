@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from logic.GUI_connection import process_coordinates
 from logic.Routing import set_path, unblock_last_connection
+from hardware.ASA import set_ASA
 
 app = Flask(__name__)
 
@@ -21,6 +22,7 @@ def receive_coordinates():
 
     # Call function from main.py
     result = process_coordinates(x1, y1, x2, y2)
+    print("processed coordinates: ", result[0], result[1])
     set_path(result[0], result[1], routetype)  # Call set_path with the processed coordinates
     print("result: ",result)
     return jsonify({"result": result})
@@ -37,7 +39,8 @@ def receive_removed_route():
     # Call function from main.py
 
     
-    
+    #set_ASA("Y6-X5", 1, "B")
+    #set_ASA("Y7-X5", 1, "B")
     unblock_last_connection()
     
     

@@ -1,5 +1,6 @@
 # This program will manage the routing of the traces
-import hardware.ASA as ASA
+#import hardware.ASA as 
+from hardware.ASA import set_ASA, connection_map_chip_A, connection_map_chip_B, connection_map_chip_C, connection_map_chip_D, status_map
 from collections import deque, defaultdict
 from hardware.I2C import switch_expander
 
@@ -37,60 +38,62 @@ def map_connection_to_address(chip_start, chip_end, connection, start, end):
 
     match chip_start:
         case 'A':
-            address_index_start = ASA.connection_map_chip_A[connection]
+            address_index_start = connection_map_chip_A[connection]
             start = int(start) - 1 # BB1 --> Y0
         case 'B':
-            address_index_start = ASA.connection_map_chip_B[connection]
+            address_index_start = connection_map_chip_B[connection]
             start = int(start) - 9 # BB9 --> Y0
         case 'C':
-            address_index_start = ASA.connection_map_chip_C[connection]
+            address_index_start = connection_map_chip_C[connection]
             start = int(start) - 19 # BB18 --> Y0
         case 'D':
-            address_index_start = ASA.connection_map_chip_D[connection]
+            address_index_start = connection_map_chip_D[connection]
             start = int(start) - 26 # BB25 --> Y0
 
     # Map the end chip and connection to the X address index
     match chip_end:
         case 'A':
-            address_index_end = ASA.connection_map_chip_A[connection]
+            address_index_end = connection_map_chip_A[connection]
             end = int(end) - 1 # BB1 --> Y0
         case 'B':
-            address_index_end = ASA.connection_map_chip_B[connection]
+            address_index_end = connection_map_chip_B[connection]
             end = int(end) - 9 # BB9 --> Y0
         case 'C':
-            address_index_end = ASA.connection_map_chip_C[connection]
+            address_index_end = connection_map_chip_C[connection]
             end = int(end) - 19 # BB18 --> Y0
         case 'D':
-            address_index_end = ASA.connection_map_chip_D[connection]
+            address_index_end = connection_map_chip_D[connection]
             end = int(end) - 26 # BB25 --> Y0
 
     # Create startpoint and endpoint strings for ASA.address_map
     startpoint = "Y" + str(start) + "-" + "X" + str(address_index_start)
     endpoint = "Y" + str(end) + "-" + "X" + str(address_index_end)
+
+    print("Mapped to ASA addresses:", startpoint, endpoint)
     return startpoint, endpoint
 
 # Block directions
 def block_connection(id):
     # id: connection id e.g. "AB_1"
-    ASA.status_map[id] = 1  # Mark connection as used
+    status_map[id] = 1  # Mark connection as used
     last_connection = id
     print("last connection: ", last_connection)
 
 # Unblock directions
 def unblock_connection(id):
     # id: connection id e.g. "AB_1"
-    ASA.status_map[id] = 0  # Mark connection as free
+    status_map[id] = 0  # Mark connection as free
 
 # unblocks the last connection
 def unblock_last_connection():
-    ASA.status_map[last_connection] = 0
+    status_map[last_connection] = 0
     print("last connection unblocked: ", last_connection)
 
 def find_path(start, target):
     queue = deque()
     # Add neighbors of the start node first to force movement
     for neighbor, conn_id in graph[start]:
-        if ASA.status_map[conn_id] == 0:
+        if status_map[conn_id] == 0:
             queue.append((neighbor, [(start, neighbor, conn_id)]))
     
     visited = set()
@@ -107,7 +110,7 @@ def find_path(start, target):
         visited.add(current)
 
         for neighbor, conn_id in graph[current]:
-            if ASA.status_map[conn_id] == 0:
+            if status_map[conn_id] == 0:
                 queue.append((neighbor, path + [(current, neighbor, conn_id)]))
 
     return None
@@ -145,9 +148,10 @@ def set_path(pin_start, pin_end, route_type):
     # pin_end: e.g. "10" (Y10)
     # both variables will come from the GUI
 
-    #print("Received pins:", pin_start, pin_end)
+    print("Received pins:", pin_start, pin_end)
     #print("route type: ", route_type)
 
+  
     # set MOSFETs for data or power trace
     switch_expander(pin_start, "power", 0)  # make sure power is off
     switch_expander(pin_start, "data", 1)  # is always data since the signal otherwise would need to go through the op_amp
@@ -157,6 +161,7 @@ def set_path(pin_start, pin_end, route_type):
     elif route_type == "data":
         switch_expander(pin_end, "power", 0)  # make sure power is off
         switch_expander(pin_end, "data", 1)  # set routetype
+    
 
     match pin_start:
         case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8: start_chip = 'A'
@@ -170,6 +175,9 @@ def set_path(pin_start, pin_end, route_type):
         case 18 | 19 | 20 | 21 | 22 | 23 | 24 |25: end_chip = 'C'
         case 26 | 27 | 28 | 29 | 30 | 31 | 32 |33: end_chip = 'D'
 
+    print("Start chip: ", start_chip)
+    print("End chip: ", end_chip)
+
     path = find_path(start_chip, end_chip)  # Example: find path from A to D
 
     # When a path is found split it into "A", "B", "AB_1"
@@ -181,19 +189,41 @@ def set_path(pin_start, pin_end, route_type):
     else:
         print("No path found")
 
-    for step in path:
+
+
+    if start_chip == end_chip:
+        print("Start and end are on the same chip, setting direct connection")
         start, end, connection = step
         address_start, address_end = map_connection_to_address(start_chip, end_chip, connection, str(pin_start), str(pin_end)) # Map to ASA addresses   
-
-        #print("Address 1:", address_start)
-        #print("Start: ", start)
-        #print("Address 2:", address_end)
-        #print("End: ", end)
-
         #print("Set Start: ")
-        ASA.set_ASA(address_start, 1, start)  # Set startpoint to 1 (connected)
-        #print("Set End: ")
-        ASA.set_ASA(address_end, 1, end)      # Set endpoint to
+        print("Address 1:", address_start, type(address_start))
+        print("Address 2:", address_end, type(address_end))
+        print("Start: ", start, type(start))
+        print("End: ", end, type(end))
 
+
+        set_ASA(address_start, 1, start_chip)  # Set startpoint to 1 (connected)
+        #print("Set End: ")
+        set_ASA(address_end, 1, end_chip )      # Set endpoint to
         block_connection(connection)  # Mark connection as used in status_map
-        #print("Connection blocked: ", ASA.status_map)
+    else:
+        for step in path:
+            print("Processing step: ", step)
+            start, end, connection = step
+            address_start, address_end = map_connection_to_address(start_chip, end_chip, connection, str(pin_start), str(pin_end)) # Map to ASA addresses   
+
+            #print("Address 1:", address_start)
+            #print("Start: ", start)
+            #print("Address 2:", address_end)
+            #print("End: ", end)
+
+            #print("Set Start: ")
+            set_ASA(address_start, 1, start)  # Set startpoint to 1 (connected)
+            #print("Set End: ")
+            set_ASA(address_end, 1, end)      # Set endpoint to
+
+            block_connection(connection)  # Mark connection as used in status_map
+
+
+
+            #print("Connection blocked: ", ASA.status_map)
