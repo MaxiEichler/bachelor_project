@@ -4,6 +4,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggle = document.getElementById("routingToggle");
   const routingLabel = document.getElementById("routinglabel");
 
+  // NEU: Initialen Text direkt beim Laden der Seite setzen
+  routingLabel.textContent = toggle.checked
+    ? "Routing Options: Datalane Two-Way"
+    : "Routing Options: Powerlane One-Way";
+
   let firstSelected = null;
 
   /* Breadboard grid */
@@ -32,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       circle.setAttribute("cx", 50 + c * spacingx);
       circle.setAttribute("cy", 50 + r * spacingy + yOffset);
-      circle.setAttribute("r", 5);
+      circle.setAttribute("r", 6);
       circle.setAttribute("fill", "#eee");
       circle.setAttribute("stroke", "#999");
       circle.style.cursor = "pointer";
@@ -65,12 +70,12 @@ document.addEventListener("DOMContentLoaded", () => {
       line.setAttribute("stroke", lineColor);
       line.setAttribute("stroke-width", "2");
       svg.appendChild(line);
-
+        /*
         document.getElementById('xlabel1').innerText = 'X1: ' + firstSelected.getAttribute('cx');
         document.getElementById('ylabel1').innerText = 'Y1: ' + firstSelected.getAttribute('cy');
         document.getElementById('xlabel2').innerText = 'X2: ' + hole.getAttribute('cx');
         document.getElementById('ylabel2').innerText = 'Y2: ' + hole.getAttribute('cy');
-
+        */
       /* send x1, y1, x2 and y2 to python script */
       fetch("/send-coordinates", {
         method: "POST",

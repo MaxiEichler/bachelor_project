@@ -1,31 +1,51 @@
+/* --- GRUNDLAYOUT & TYPOGRAFIE --- */
 body {
-    font-family: Arial, sans-serif;
+    /* Eine modernere Schriftart verwenden */
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     margin: 50px;
+    background-color: #f4f7f6; /* Ein helles Grau lässt den Container hervortreten */
+    color: #333;
 }
 
-/* CONTAINER */
+/* --- HAUPTCONTAINER --- */
 .container {
     max-width: 1200px;
     margin: auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
+    padding: 30px; /* Etwas mehr Platz im Inneren */
+    background-color: #ffffff; /* Weißer Hintergrund */
+    border-radius: 12px; /* Etwas rundere Ecken */
+    /* Wir ersetzen den harten Rahmen durch einen weichen Schatten */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); 
 }
 
+/* --- SPALTEN-LAYOUT --- */
 .layout {
     display: flex;
     gap: 30px;
 }
 
-.left { flex: 2; text-align: center; }
-.right { flex: 1; border-left: 1px solid #ddd; padding-left: 20px; }
-
-svg {
-    margin-top: 10px;
-    border: 1px solid #ccc;
+.left { 
+    flex: 2; 
+    text-align: center; 
 }
 
-/* SWITCH */
+.right { 
+    flex: 1; 
+    border-left: 2px solid #eee; /* Etwas weicherer Trennstrich */
+    padding-left: 30px; 
+}
+
+/* --- BREADBOARD SVG --- */
+svg {
+    margin-top: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px; 
+    background-color: #fafafa;
+    width: 100%; /* NEU: Streckt das SVG über die gesamte Breite des linken Containers */
+    height: auto; /* NEU: Behält das Seitenverhältnis bei, damit nichts verzerrt wird */
+}
+
+/* --- TOGGLE SWITCH (Unverändert, da bereits sehr gut) --- */
 .switch {
     position: relative;
     display: inline-block;
@@ -74,20 +94,55 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-.div{
+/* --- BESCHRIFTUNGEN --- */
+.div {
     margin-top: 6px;
     font-weight: bold;
 }
 
+#routinglabel {
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: #555;
+}
+
+/* --- BUTTONS & CONTROLS --- */
 .routing-controls {
     display: flex;
     flex-direction: column;
-    gap: 12px;   /* space between switch and button */
+    gap: 15px;
     margin-top: 10px;
     align-items: flex-start;
 }
 
 .routing-controls button {
-    padding: 8px;
+    padding: 12px 20px;
     font-weight: bold;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    color: white;
+    width: 100%; /* Buttons füllen die Breite aus */
+    max-width: 200px;
+}
+
+/* Spezifische Farben für die Buttons */
+#clearBtn {
+    background-color: #f44336; /* Rot für Löschen */
+}
+
+#clearBtn:hover {
+    background-color: #d32f2f; /* Dunkleres Rot beim Hovern */
+    transform: translateY(-2px); /* Hebt den Button leicht an */
+}
+
+#removelast {
+    background-color: #ff9800; /* Orange für teilweises Löschen */
+}
+
+#removelast:hover {
+    background-color: #e68a00;
+    transform: translateY(-2px);
 }
