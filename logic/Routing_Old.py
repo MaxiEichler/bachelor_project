@@ -1,7 +1,9 @@
 # This program will manage the routing of the traces
-from hardware.ASA import set_ASA, connection_map_chip_A, connection_map_chip_B, status_map
+#import hardware.ASA as 
+from hardware.ASA import set_ASA, connection_map_chip_A, connection_map_chip_B, connection_map_chip_C, connection_map_chip_D, status_map
 from collections import deque, defaultdict
 from hardware.I2C import switch_expander
+
 
 # Create a graph to represent the connections
 graph = defaultdict(list)
@@ -15,16 +17,19 @@ def add_connection(node1, node2, connection_id):
     graph[node2].append((node1, connection_id)) # from node2 to node1
 
 # create all connections
-for i in range(1, 9):
+for i in range(1, 5):
     add_connection("A", "B", f"AB_{i}")
-    add_connection("A", "A", f"AA_{i}")
-    add_connection("B", "B", f"BB_{i}")
+    add_connection("A", "C", f"AC_{i}")
+    add_connection("A", "D", f"AD_{i}")
+    add_connection("B", "D", f"BD_{i}")
+    add_connection("B", "C", f"CB_{i}")
+    add_connection("C", "D", f"CD_{i}")
 
 # This function maps the desired connection to the ASA address_map
 def map_connection_to_address(chip_start, chip_end, connection, start, end):
     # Map the start chip and connection to the X address index
-    # chip_start: "A" or "B"
-    # chip_end: "A" or "B"
+    # chip_start: 'A', 'B', 'C' or 'D'
+    # chip_end: 'A', 'B', 'C' or 'D'
     # connection: e.g. "AB_1"
     # start: e.g. "1" (Y1)
     # end: e.g. "10" (Y10)
@@ -38,6 +43,12 @@ def map_connection_to_address(chip_start, chip_end, connection, start, end):
         case 'B':
             address_index_start = connection_map_chip_B[connection]
             start = int(start) - 9 # BB9 --> Y0
+        case 'C':
+            address_index_start = connection_map_chip_C[connection]
+            start = int(start) - 19 # BB18 --> Y0
+        case 'D':
+            address_index_start = connection_map_chip_D[connection]
+            start = int(start) - 26 # BB25 --> Y0
 
     # Map the end chip and connection to the X address index
     match chip_end:
@@ -47,6 +58,12 @@ def map_connection_to_address(chip_start, chip_end, connection, start, end):
         case 'B':
             address_index_end = connection_map_chip_B[connection]
             end = int(end) - 9 # BB9 --> Y0
+        case 'C':
+            address_index_end = connection_map_chip_C[connection]
+            end = int(end) - 19 # BB18 --> Y0
+        case 'D':
+            address_index_end = connection_map_chip_D[connection]
+            end = int(end) - 26 # BB25 --> Y0
 
     # Create startpoint and endpoint strings for ASA.address_map
     startpoint = "Y" + str(start) + "-" + "X" + str(address_index_start)
@@ -67,18 +84,11 @@ def unblock_connection(id):
     # id: connection id e.g. "AB_1"
     status_map[id] = 0  # Mark connection as free
 
-# Unblock last connection
+# unblocks the last connection
 def unblock_last_connection():
     status_map[last_connection] = 0
     print("last connection unblocked: ", last_connection)
 
-# Unblock all connections
-def unblock_all_connections():
-    for key in status_map.keys():
-        status_map[key] = 0
-    print("All connections unblocked")
-
-# Find path using BFS (Breadth First Search)
 def find_path(start, target):
     queue = deque()
     # Add neighbors of the start node first to force movement
@@ -105,7 +115,34 @@ def find_path(start, target):
 
     return None
 
-# This function sets the path on the ASA based on the start and end pins and the route type (data or power)
+"""    
+# Find shortest path with the help of BFS
+def find_path(start, target):
+    # start: starting node "A", "B", "C" or "D"
+    # target: target node "A", "B", "C" or "D"
+
+    queue = deque()
+    queue.append((start, []))
+    visited = set()
+
+    while queue:
+        current, path = queue.popleft()
+
+        if current == target:
+            print("same path: ", path)
+            return path
+
+        if current in visited:
+            continue
+
+        visited.add(current)
+
+        for neighbor, conn_id in graph[current]:
+            if ASA.status_map[conn_id] == 0:  # Check if connection is free
+                queue.append((neighbor, path + [(current, neighbor, conn_id)]))
+
+    return None
+"""
 def set_path(pin_start, pin_end, route_type):
     # pin_start: e.g. "1" (Y1)
     # pin_end: e.g. "10" (Y10)
@@ -114,31 +151,34 @@ def set_path(pin_start, pin_end, route_type):
     print("Received pins:", pin_start, pin_end)
     #print("route type: ", route_type)
 
+  
     # set MOSFETs for data or power trace
-    switch_expander(pin_start, "power")  # make sure power is off
-    switch_expander(pin_start, "data")  # is always data since the signal otherwise would need to go through the op_amp
+    switch_expander(pin_start, "power", 0)  # make sure power is off
+    switch_expander(pin_start, "data", 1)  # is always data since the signal otherwise would need to go through the op_amp
     if route_type == "power":
-        switch_expander(pin_end, "data")  # make sure data is off
-        switch_expander(pin_end, "power")  # set routetype 
+        switch_expander(pin_end, "data", 0)  # make sure data is off
+        switch_expander(pin_end, "power", 1)  # set routetype 
     elif route_type == "data":
-        switch_expander(pin_end, "power")  # make sure power is off
-        switch_expander(pin_end, "data")  # set routetype
+        switch_expander(pin_end, "power", 0)  # make sure power is off
+        switch_expander(pin_end, "data", 1)  # set routetype
     
 
-    # Determine start and end chip based on pin numbers
     match pin_start:
-        case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 : start_chip = "A"
-        case 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16: start_chip = "B"
+        case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8: start_chip = 'A'
+        case 9 | 10 | 11 | 12 | 13 | 14 | 15 |16: start_chip = 'B'
+        case 18 | 19 | 20 | 21 | 22 | 23 | 24 |25: start_chip = 'C'
+        case 26 | 27 | 28 | 29 | 30 | 31 | 32 |33: start_chip = 'D'
 
     match pin_end:
-        case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 : end_chip = "A"
-        case 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16: end_chip = "B"
+        case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8: end_chip = 'A'
+        case 9 | 10 | 11 | 12 | 13 | 14 | 15 |16: end_chip = 'B'
+        case 18 | 19 | 20 | 21 | 22 | 23 | 24 |25: end_chip = 'C'
+        case 26 | 27 | 28 | 29 | 30 | 31 | 32 |33: end_chip = 'D'
 
     print("Start chip: ", start_chip)
     print("End chip: ", end_chip)
 
     path = find_path(start_chip, end_chip)  # Example: find path from A to D
-
 
     # When a path is found split it into "A", "B", "AB_1"
     if path:
@@ -150,7 +190,7 @@ def set_path(pin_start, pin_end, route_type):
         print("No path found")
 
 
-    # Check if start and end are on the same chip, if yes set direct connection, if not set path
+
     if start_chip == end_chip:
         print("Start and end are on the same chip, setting direct connection")
         start, end, connection = step
@@ -183,5 +223,7 @@ def set_path(pin_start, pin_end, route_type):
             set_ASA(address_end, 1, end)      # Set endpoint to
 
             block_connection(connection)  # Mark connection as used in status_map
+
+
 
             #print("Connection blocked: ", ASA.status_map)

@@ -65,15 +65,11 @@ status_map = {
     "CD_1": 0, "CD_2": 0, "CD_3": 0, "CD_4": 0
 }
 
-connection_map = {
-    "AB_1": 0, "AB_2": 1, "AB_3": 2, "AB_4": 3,
-    "AB_5": 4, "AB_6": 5, "AB_7": 6, "AB_8": 7
-}
-
 # This map connects the status_map key to the address_map index of Chip A
 connection_map_chip_A = {
     "AB_1": 0, "AB_2": 1, "AB_3": 2, "AB_4": 3,
-    "AB_5": 4, "AB_6": 5, "AB_7": 6, "AB_8": 7
+    "AC_1": 8, "AC_2": 9, "AC_3": 10, "AC_4": 11,
+    "AD_1": 14, "AD_2": 15, "AD_3": 6, "AD_4": 7
 }
 
 # This map connects the status_map key to the address_map index of Chip B

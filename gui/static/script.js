@@ -82,9 +82,9 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
           x1: firstSelected.getAttribute("cx"),
-          y1: firstSelected.getAttribute("cy"),
+          //y1: firstSelected.getAttribute("cy"),
           x2: hole.getAttribute("cx"),
-          y2: hole.getAttribute("cy"),
+          //y2: hole.getAttribute("cy"),
           routeType: isDataLane ? "data" : "power"
         })
       })
@@ -115,6 +115,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const holes = svg.querySelectorAll("circle");
     holes.forEach(hole => hole.setAttribute("fill", "#eee"));
     firstSelected = null;
+
+        // Send coordinates of removed line to backend
+    fetch("/remove-all", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ action: "remove_all" })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log("Remove all routes result:", data.result);
+    });
   });
 
   /* Remove last Route */
@@ -127,9 +138,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Optionally grab its coordinates before removing
       const x1 = lastLine.getAttribute("x1");
-      const y1 = lastLine.getAttribute("y1");
+      //const y1 = lastLine.getAttribute("y1");
       const x2 = lastLine.getAttribute("x2");
-      const y2 = lastLine.getAttribute("y2");
+      //const y2 = lastLine.getAttribute("y2");
 
       lastLine.remove();
 
@@ -137,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
       fetch("/remove-route", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ x1, y1, x2, y2 })
+        body: JSON.stringify({ x1, x2 })
       })
       .then(response => response.json())
       .then(data => {

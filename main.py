@@ -28,7 +28,7 @@ def main():
         print("Starting Main Program... (The monitor will report automatically)")
         init_GPIO()  # Initialize GPIO pins for ASA communication
         #init_I2C()   # Initialize I2C communication with the expanders  
-        #switch_expander(1, "data", 1)  # Example usage of the switch_expander function
+        #switch_expander(1, "data")  # Example usage of the switch_expander function
         #switch_expander(4, "power")  # Example usage of the switch_expander function
         #set_ASA("Y0-X8", 1, "B")
         #set_ASA("Y1-X8", 1, "B")

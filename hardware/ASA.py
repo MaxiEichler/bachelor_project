@@ -7,14 +7,11 @@ pi = pigpio.pi()
 
 delay = 0.01
 
-CLK = 11
-STB_A = 17
-STB_B = 18
-STB_C = 19
-STB_D = 20
-DAT = 24
-RST = 25
-
+CLK = 22
+STB_A = 4
+STB_B = 0
+DAT = 27
+RST = 17
 
 def log(message):
     print(f"{datetime.now().strftime('%M:%S.%f')[:-3]} - {message}")
@@ -23,19 +20,18 @@ def init_GPIO():
     pi.set_mode(CLK, pigpio.OUTPUT)
     pi.set_mode(STB_A, pigpio.OUTPUT)
     pi.set_mode(STB_B, pigpio.OUTPUT)
-    pi.set_mode(STB_C, pigpio.OUTPUT)
-    pi.set_mode(STB_D, pigpio.OUTPUT)
     pi.set_mode(DAT, pigpio.OUTPUT)
     pi.set_mode(RST, pigpio.OUTPUT)
 
-    
     log(f"Reset: 1")
     time.sleep(0.1)
     pi.write(RST, 1)
     log(f"Reset: 0")
+    pi.write(RST, 0)
+    time.sleep(0.1)
     print("GPIO initialized")
 
-
+# This map converts the Y-X coordinates to the corresponding address in the ASA
 address_map = {
     "Y0-X0": "0x00", "Y1-X0": "0x10", "Y2-X0": "0x20", "Y3-X0": "0x30", "Y4-X0": "0x40", "Y5-X0": "0x50", "Y6-X0": "0x60", "Y7-X0": "0x70",
     "Y0-X1": "0x01", "Y1-X1": "0x11", "Y2-X1": "0x21", "Y3-X1": "0x31", "Y4-X1": "0x41", "Y5-X1": "0x51", "Y6-X1": "0x61", "Y7-X1": "0x71",
@@ -58,50 +54,36 @@ address_map = {
 # This map shows which connection of ASA are free (0) or used (1)
 status_map = {
     "AB_1": 0, "AB_2": 0, "AB_3": 0, "AB_4": 0,
-    "AC_1": 0, "AC_2": 0, "AC_3": 0, "AC_4": 0,
-    "AD_1": 0, "AD_2": 0, "AD_3": 0, "AD_4": 0,
-    "BD_1": 0, "BD_2": 0, "BD_3": 0, "BD_4": 0,
-    "CB_1": 0, "CB_2": 0, "CB_3": 0, "CB_4": 0,
-    "CD_1": 0, "CD_2": 0, "CD_3": 0, "CD_4": 0
+    "AB_5": 0, "AB_6": 0, "AB_7": 0, "AB_8": 0,
+    "AA_1": 0, "AA_2": 0, "AA_3": 0, "AA_4": 0,
+    "AA_5": 0, "AA_6": 0, "AA_7": 0, "AA_8": 0,
+    "BB_1": 0, "BB_2": 0, "BB_3": 0, "BB_4": 0,
+    "BB_5": 0, "BB_6": 0, "BB_7": 0, "BB_8": 0
 }
 
 # This map connects the status_map key to the address_map index of Chip A
 connection_map_chip_A = {
     "AB_1": 0, "AB_2": 1, "AB_3": 2, "AB_4": 3,
-    "AC_1": 8, "AC_2": 9, "AC_3": 10, "AC_4": 11,
-    "AD_1": 14, "AD_2": 15, "AD_3": 6, "AD_4": 7
+    "AB_5": 4, "AB_6": 5, "AB_7": 6, "AB_8": 7,
+    "AA_1": 8, "AA_2": 9, "AA_3": 10, "AA_4": 11,
+    "AA_5": 12, "AA_6": 13, "AA_7": 14, "AA_8": 15
 }
 
 # This map connects the status_map key to the address_map index of Chip B
 connection_map_chip_B = {
-    "AB_1": 8, "AB_2": 9, "AB_3": 10, "AB_4": 11,
-    "CB_1": 0, "CB_2": 1, "CB_3": 2, "CB_4": 3,
-    "BD_1": 7, "BD_2": 6, "BD_3": 15, "BD_4": 14
-}
-
-# This map connects the status_map key to the address_map index of Chip C
-connection_map_chip_C = {
-    "AC_1": 11, "AC_2": 10, "AC_3": 9, "AC_4": 8,
-    "CB_1": 14, "CB_2": 15, "CB_3": 6, "CB_4": 7,
-    "CD_1": 0, "CD_2": 1, "CD_3": 2, "CD_4": 3
-}
-
-# This map connects the status_map key to the address_map index of Chip D
-connection_map_chip_D = {
-    "AD_1": 0, "AD_2": 1, "AD_3": 2, "AD_4": 3,
-    "BD_1": 14, "BD_2": 15, "BD_3": 6, "BD_4": 7,
-    "CD_1": 8, "CD_2": 9, "CD_3": 10, "CD_4": 11
+    "AB_1": 0, "AB_2": 1, "AB_3": 2, "AB_4": 3,
+    "AB_5": 4, "AB_6": 5, "AB_7": 6, "AB_8": 7,
+    "BB_1" : 8, "BB_2" : 9, "BB_3" : 10, "BB_4" : 11,
+    "BB_5" : 12, "BB_6" : 13, "BB_7" : 14, "BB_8" : 15,
 }
 
 def set_ASA(address, state, chip):
     # address: Y0-X0
     # state: 1 or 0
-    # chip: "A", "B", "C" or "D"
+    # chip: "A" or "B"
 
-    #ypi.write(RST, 1)
-    #time.sleep(delay)
-    pi.write(RST, 0)
-    time.sleep(delay)
+    #    pi.write(RST, 0)
+    #    time.sleep(delay)
 
     log(f"address: {address}")
     log(f"state: {state}")
@@ -110,24 +92,21 @@ def set_ASA(address, state, chip):
     #print("statusmap at the start: ", status_map))
 
     # Convert hex string to integer
-    value = int(address_map[address], 16)
+    address_int = int(address_map[address], 16)
 
-    print("value from address_map: ", bin(value))
+    print("value from address_map: ", bin(address_int))
 
-    value = (value << 1) | state
+    # Shift address_int left by 1 and add state bit
+    address_int = (address_int << 1) | state
 
-    print("value after shift: ", bin(value))
+    print("value after shift: ", bin(address_int))
 
     # Determine strobe pin
     match chip:
         case "A":
-            STB = 17
+            STB = STB_A
         case "B":
-            STB = 18
-        case "C":
-            STB = 19
-        case "D":
-            STB = 20
+            STB = STB_B
         case _:
             raise ValueError("Invalid chip selected")
 
@@ -146,14 +125,11 @@ def set_ASA(address, state, chip):
     time.sleep(delay)
 
     print("start sending data: ")
+
     # Send 8 address bits (MSB first)
     for _ in range(7):
 
-        #pi.write(CLK, 0)  # SK LOW
-        #log("SK 0")
-        #time.sleep(delay)
-
-        if value & 0x80:
+        if address_int & 0x80:
             pi.write(DAT, 1)
             log("DAT 1")
             time.sleep(delay)
@@ -163,7 +139,7 @@ def set_ASA(address, state, chip):
             time.sleep(delay)
 
         pi.write(CLK, 0)  # SK HIGH
-       # log("CLK 0")
+        #log("CLK 0")
         time.sleep(delay)
 
         pi.write(CLK, 1)
@@ -171,7 +147,7 @@ def set_ASA(address, state, chip):
         time.sleep(delay)
 
         #print("value befor: ", value)
-        value <<= 1
+        address_int <<= 1
         #print("value after: ", value)
 
     pi.write(CLK, 0)  # SK LOW
@@ -205,7 +181,6 @@ def set_ASA(address, state, chip):
     pi.write(DAT, 0)
     #log("DAT 0")
     time.sleep(delay)
-#print("statusmap at the end: ", status_map)
 
 def reset_ASA():
     pi.write(RST, 1)

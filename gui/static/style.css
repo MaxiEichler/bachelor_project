@@ -130,16 +130,16 @@ input:checked + .slider:before {
 
 /* Spezifische Farben für die Buttons */
 #clearBtn {
-    background-color: #f44336; /* Rot für Löschen */
+    background-color: #b71c1c;; /* Rot für Löschen */
 }
 
 #clearBtn:hover {
-    background-color: #d32f2f; /* Dunkleres Rot beim Hovern */
-    transform: translateY(-2px); /* Hebt den Button leicht an */
+    background-color: #ef5350;
+    box-shadow: 0 0 10px rgba(239, 83, 80, 0.4);
 }
 
 #removelast {
-    background-color: #ff9800; /* Orange für teilweises Löschen */
+    background-color: #e65100; /* Orange für teilweises Löschen */
 }
 
 #removelast:hover {

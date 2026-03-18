@@ -32,6 +32,10 @@ BB_power_map = {
     13: 1, 14: 3, 15: 5, 16: 7
 }
 
+BB_map = {
+    1: 
+}
+
 # Initialize I2C bus and configure expanders
 def init_I2C():
     # Set all pins of expander as outputs
@@ -40,11 +44,7 @@ def init_I2C():
     bus.write_byte_data(Device_Address_U300, address_map["IODIRB"], 0x00) # Set all pins of port B as output
     print("I2C initialized and expanders configured as outputs")
 
-def switch_expander(BB, mode):
-    # BB: 1-16
-    # mode: "data" or "power"
-
-    
+def switch_expander(BB, mode, state):
     print("BB: ", BB, "mode: ", mode)
 
     # Determine which register and local pin to modify based on BB and mode
@@ -55,13 +55,26 @@ def switch_expander(BB, mode):
         reg_name = "GPIOB"
         local_pin = BB - 9
 
-    reg_addr = address_map[reg_name]
-
     # Determine the state to set based on mode
     if mode == "data":
         state = 0
     elif mode == "power":
         state = 1
+
+    # Determine which register (Port A for 1-4 and 9-12, Port B for 5-8 and 13-16)
+    # Using your logic: 1-4=A, 5-8=B, 9-12=A, 13-16=B
+    if (1 <= BB <= 4) or (9 <= BB <= 12):
+        reg_name = "GPIOA"
+    else:
+        reg_name = "GPIOB"
+    
+    reg_addr = address_map[reg_name]
+
+    # Get the local pin from your maps
+    if mode == "data":
+        local_pin = BB_data_map[BB]
+    elif mode == "power":
+        local_pin = BB_power_map[BB]
 
     # Read - Modify - Write
     try:

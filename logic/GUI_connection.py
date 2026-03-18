@@ -6,18 +6,16 @@ connection_map_x = {
     "210": 9, "230": 10, "250": 11, "270": 12, "290": 13, "310": 14, "330": 15, "350": 16   # Chip B
 }
 
-def process_coordinates(x1, y1, x2, y2):
+def process_coordinates(x1, x2):
     # x1: 50, 70, 90, ...
-    # y1:
     # x2: 50, 70, 90, ...
-    # y2: 
 
-    print("Received coordinates:", x1, y1, x2, y2)
+    print("Received coordinates:", x1, x2)
 
     connection_point_1 = connection_map_x[x1]
     connection_point_2 = connection_map_x[x2]
-    print("Connection Point 1:", connection_point_1
-          , "Connection Point 2:", connection_point_2)
+    
+    print("Connection Point 1:", connection_point_1, "Connection Point 2:", connection_point_2)
 
     return connection_point_1, connection_point_2
 
