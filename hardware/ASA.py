@@ -16,6 +16,7 @@ RST = 17
 def log(message):
     print(f"{datetime.now().strftime('%M:%S.%f')[:-3]} - {message}")
 
+# Initialize the GPIO pins and reset the ASA
 def init_GPIO():
     pi.set_mode(CLK, pigpio.OUTPUT)
     pi.set_mode(STB_A, pigpio.OUTPUT)
@@ -82,8 +83,8 @@ def set_ASA(address, state, chip):
     # state: 1 or 0
     # chip: "A" or "B"
 
-    #    pi.write(RST, 0)
-    #    time.sleep(delay)
+    pi.write(RST, 0)
+    time.sleep(delay)
 
     log(f"address: {address}")
     log(f"state: {state}")
@@ -182,6 +183,7 @@ def set_ASA(address, state, chip):
     #log("DAT 0")
     time.sleep(delay)
 
+# This function will reset the ASA by toggling the RST pin
 def reset_ASA():
     pi.write(RST, 1)
     time.sleep(delay)

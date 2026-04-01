@@ -20,6 +20,12 @@ for i in range(1, 9):
     add_connection("A", "A", f"AA_{i}")
     add_connection("B", "B", f"BB_{i}")
 
+# This mapping is used to connect logic with hardware of the chip
+conversion_map_A = {
+    "0": 7, "1": 6, "2": 5, "3": 4,
+    "4": 3, "5": 2, "6": 1, "7": 0
+}
+
 # This function maps the desired connection to the ASA address_map
 def map_connection_to_address(chip_start, chip_end, connection, start, end):
     # Map the start chip and connection to the X address index
@@ -31,6 +37,7 @@ def map_connection_to_address(chip_start, chip_end, connection, start, end):
 
     print(("received in map_connection_to_address:", chip_start, chip_end, connection, start, end))
 
+    # Map the start chip and connection to the X address index
     match chip_start:
         case 'A':
             address_index_start = connection_map_chip_A[connection]
@@ -49,8 +56,17 @@ def map_connection_to_address(chip_start, chip_end, connection, start, end):
             end = int(end) - 9 # BB9 --> Y0
 
     # Create startpoint and endpoint strings for ASA.address_map
-    startpoint = "Y" + str(start) + "-" + "X" + str(address_index_start)
-    endpoint = "Y" + str(end) + "-" + "X" + str(address_index_end)
+    if chip_start == "A":
+        print("start", start)
+        new_start = conversion_map_A[str(start)]
+        print("new start: ", new_start)
+        startpoint = "Y" + str(new_start) + "-" + "X" + str(address_index_start)
+        new_end = conversion_map_A[str(end)]
+        print("new end: ", new_end)
+        endpoint = "Y" + str(new_end) + "-" + "X" + str(address_index_end)
+    else:
+        startpoint = "Y" + str(start) + "-" + "X" + str(address_index_start)
+        endpoint = "Y" + str(end) + "-" + "X" + str(address_index_end)
 
     print("Mapped to ASA addresses:", startpoint, endpoint)
     return startpoint, endpoint
@@ -87,7 +103,7 @@ def find_path(start, target):
             queue.append((neighbor, [(start, neighbor, conn_id)]))
     
     visited = set()
-
+    
     while queue:
         current, path = queue.popleft()
 
@@ -114,7 +130,7 @@ def set_path(pin_start, pin_end, route_type):
     print("Received pins:", pin_start, pin_end)
     #print("route type: ", route_type)
 
-    # set MOSFETs for data or power trace
+    # set analogue switches for data or power trace
     switch_expander(pin_start, "power")  # make sure power is off
     switch_expander(pin_start, "data")  # is always data since the signal otherwise would need to go through the op_amp
     if route_type == "power":
@@ -139,7 +155,6 @@ def set_path(pin_start, pin_end, route_type):
 
     path = find_path(start_chip, end_chip)  # Example: find path from A to D
 
-
     # When a path is found split it into "A", "B", "AB_1"
     if path:
         print("Path found:")
@@ -148,7 +163,6 @@ def set_path(pin_start, pin_end, route_type):
             start, end, connection = step
     else:
         print("No path found")
-
 
     # Check if start and end are on the same chip, if yes set direct connection, if not set path
     if start_chip == end_chip:
