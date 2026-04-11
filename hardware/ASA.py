@@ -78,6 +78,12 @@ connection_map_chip_B = {
     "BB_5" : 12, "BB_6" : 13, "BB_7" : 14, "BB_8" : 15,
 }
 
+def reset_ASA():
+    pi.write(RST, 1)
+    time.sleep(delay)
+    pi.write(RST, 0)
+    time.sleep(delay)
+
 def set_ASA(address, state, chip):
     # address: Y0-X0
     # state: 1 or 0

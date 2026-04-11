@@ -1,7 +1,8 @@
 # This program will manage the routing of the traces
-from hardware.ASA import set_ASA, connection_map_chip_A, connection_map_chip_B, status_map
+from hardware.ASA import set_ASA, connection_map_chip_A, connection_map_chip_B, status_map, reset_ASA
 from collections import deque, defaultdict
 from hardware.I2C import switch_expander
+
 
 # Create a graph to represent the connections
 graph = defaultdict(list)
@@ -93,6 +94,7 @@ def unblock_all_connections():
     for key in status_map.keys():
         status_map[key] = 0
     print("All connections unblocked")
+    reset_ASA()  # Reset ASA to clear all connections
 
 # Find path using BFS (Breadth First Search)
 def find_path(start, target):
@@ -131,14 +133,16 @@ def set_path(pin_start, pin_end, route_type):
     #print("route type: ", route_type)
 
     # set analogue switches for data or power trace
-    switch_expander(pin_start, "power")  # make sure power is off
+    #switch_expander(pin_start, "power")  # make sure power is off
     switch_expander(pin_start, "data")  # is always data since the signal otherwise would need to go through the op_amp
-    if route_type == "power":
-        switch_expander(pin_end, "data")  # make sure data is off
-        switch_expander(pin_end, "power")  # set routetype 
-    elif route_type == "data":
-        switch_expander(pin_end, "power")  # make sure power is off
-        switch_expander(pin_end, "data")  # set routetype
+    #if route_type == "power":
+    #    switch_expander(pin_end, "data")  # make sure data is off
+    #    switch_expander(pin_end, "power")  # set routetype 
+    #elif route_type == "data":
+    #    switch_expander(pin_end, "power")  # make sure power is off
+    #    switch_expander(pin_end, "data")  # set routetype
+
+    switch_expander(pin_end, route_type)  # set routetype for endpoint
     
 
     # Determine start and end chip based on pin numbers
