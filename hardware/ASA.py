@@ -16,6 +16,8 @@ RST = 17
 def log(message):
     print(f"{datetime.now().strftime('%M:%S.%f')[:-3]} - {message}")
 
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 # Initialize the GPIO pins and reset the ASA
 def init_GPIO():
     pi.set_mode(CLK, pigpio.OUTPUT)
@@ -24,10 +26,10 @@ def init_GPIO():
     pi.set_mode(DAT, pigpio.OUTPUT)
     pi.set_mode(RST, pigpio.OUTPUT)
 
-    log(f"Reset: 1")
+    #log(f"Reset: 1")
     time.sleep(0.1)
     pi.write(RST, 1)
-    log(f"Reset: 0")
+    #log(f"Reset: 0")
     pi.write(RST, 0)
     time.sleep(0.1)
     print("GPIO initialized")
@@ -78,35 +80,41 @@ connection_map_chip_B = {
     "BB_5" : 12, "BB_6" : 13, "BB_7" : 14, "BB_8" : 15,
 }
 
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 def reset_ASA():
     pi.write(RST, 1)
     time.sleep(delay)
     pi.write(RST, 0)
     time.sleep(delay)
 
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 def set_ASA(address, state, chip):
     # address: Y0-X0
     # state: 1 or 0
     # chip: "A" or "B"
 
+    #log(f"start of transmission")
+
     pi.write(RST, 0)
     time.sleep(delay)
 
-    log(f"address: {address}")
-    log(f"state: {state}")
-    log(f"chip: {chip}")
+    #log(f"address: {address}")
+    #log(f"state: {state}")
+    #log(f"chip: {chip}")
 
     #print("statusmap at the start: ", status_map))
 
     # Convert hex string to integer
     address_int = int(address_map[address], 16)
 
-    print("value from address_map: ", bin(address_int))
+    #print("value from address_map: ", bin(address_int))
 
     # Shift address_int left by 1 and add state bit
     address_int = (address_int << 1) | state
 
-    print("value after shift: ", bin(address_int))
+    #print("value after shift: ", bin(address_int))
 
     # Determine strobe pin
     match chip:
@@ -131,18 +139,18 @@ def set_ASA(address, state, chip):
     #log("CLK 0")
     time.sleep(delay)
 
-    print("start sending data: ")
+    #print("start sending data: ")
 
     # Send 8 address bits (MSB first)
     for _ in range(7):
 
         if address_int & 0x80:
             pi.write(DAT, 1)
-            log("DAT 1")
+            #log("DAT 1")
             time.sleep(delay)
         else:
             pi.write(DAT, 0)
-            log("DAT 0")
+            #log("DAT 0")
             time.sleep(delay)
 
         pi.write(CLK, 0)  # SK HIGH
@@ -164,11 +172,11 @@ def set_ASA(address, state, chip):
     # Send state bit
     if state == 1:
         pi.write(DAT, 1)
-        log("DAT 1")
+        #log("DAT 1")
         time.sleep(delay)
     else:
         pi.write(DAT, 0)
-        log("DAT 0")
+        #log("DAT 0")
         time.sleep(delay)
 
     pi.write(STB, 0)
@@ -189,6 +197,10 @@ def set_ASA(address, state, chip):
     #log("DAT 0")
     time.sleep(delay)
 
+    #log("End of transmission")
+
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 # This function will reset the ASA by toggling the RST pin
 def reset_ASA():
     pi.write(RST, 1)
@@ -196,80 +208,3 @@ def reset_ASA():
     pi.write(RST, 0)
     time.sleep(delay)
     log("ASA reset complete")
-
-def manualset():
-    pi.write(RST, 1)
-    time.sleep(delay)
-    pi.write(RST, 0)
-    time.sleep(delay)
-
-    pi.write(STB_A, 0)
-    time.sleep(delay)
-    pi.write(DAT, 0)
-    time.sleep(delay)
-    pi.write(CLK, 0)
-    time.sleep(delay)
-
-    # Y0 X0 = 0x00 -> 0b00000001
-    #1
-    pi.write(DAT, 0)
-    time.sleep(delay)
-    pi.write(CLK, 1)
-    time.sleep(delay)
-    #2
-    pi.write(DAT, 0)
-    time.sleep(delay)
-    pi.write(CLK, 0)
-    time.sleep(delay)
-    pi.write(CLK, 1)
-    time.sleep(delay)
-    #3
-    pi.write(DAT, 0)
-    time.sleep(delay)
-    pi.write(CLK, 0)
-    time.sleep(delay)
-    pi.write(CLK, 1)
-    time.sleep(delay)
-    #4
-    pi.write(DAT, 0)
-    time.sleep(delay)
-    pi.write(CLK, 0)
-    time.sleep(delay)
-    pi.write(CLK, 1)
-    time.sleep(delay)
-    #5
-    pi.write(DAT, 0)
-    time.sleep(delay)
-    pi.write(CLK, 0)
-    time.sleep(delay)
-    pi.write(CLK, 1)
-    time.sleep(delay)
-    #6
-    pi.write(DAT, 0)
-    time.sleep(delay)
-    pi.write(CLK, 0)
-    time.sleep(delay)
-    pi.write(CLK, 1)
-    time.sleep(delay)
-    #7
-    pi.write(DAT, 0)
-    time.sleep(delay)
-    pi.write(CLK, 0)
-    time.sleep(delay)
-    pi.write(CLK, 1)
-    time.sleep(delay)
-    pi.write(CLK, 0)
-    time.sleep(delay)
-    #8
-    pi.write(DAT, 1)
-    time.sleep(delay)
-    pi.write(STB_B, 0)
-    time.sleep(delay)
-    pi.write(STB_B, 1)
-    time.sleep(delay)
-    pi.write(STB_B, 0)
-    time.sleep(delay)
-    pi.write(DAT, 0)
-    time.sleep(delay)
-
-    print("Manual set complete")

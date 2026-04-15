@@ -35,6 +35,8 @@ BB_power_map = {
     13: 1, 14: 3, 15: 5, 16: 7
 }   
 
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 # Initialize I2C bus and configure expanders
 def init_I2C():
     # Set all pins of expander as outputs and set IOCON to BANK 0 for easier addressing
@@ -43,12 +45,13 @@ def init_I2C():
     bus.write_byte_data(Device_Address_U300, address_map["IODIRB"], 0x00) # Set all pins of port B as output
     print("I2C initialized and expanders configured as outputs")
     
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 def switch_expander(BB, mode):
     # BB: 1-16
     # mode: "data" or "power"
 
-    print("BB: ", BB, "mode: ", mode)
+    #print("BB: ", BB, "mode: ", mode)
 
     # Determine which register and local pin to modify based on BB and mode
     if BB < 9:
@@ -79,7 +82,7 @@ def switch_expander(BB, mode):
 
         # Write the new value back to the expander
         bus.write_byte_data(Device_Address_U300, reg_addr, new_value)
-        print(f"BB{BB} [{mode}] set to {state} on {hex(Device_Address_U300)} {reg_name} (Val: {bin(new_value)})")
+        #print(f"BB{BB} [{mode}] set to {state} on {hex(Device_Address_U300)} {reg_name} (Val: {bin(new_value)})")
         
     except Exception as e:
         print(f"I2C Error: {e}")

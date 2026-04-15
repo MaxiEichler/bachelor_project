@@ -10,13 +10,13 @@ def process_coordinates(x1, x2):
     # x1: 50, 70, 90, ...
     # x2: 50, 70, 90, ...
 
-    print("Received coordinates:", x1, x2)
+    #print("Received coordinates:", x1, x2)
 
     # Convert the x-coordinates to connection points using the mapping
     connection_point_1 = connection_map_x[x1]
     connection_point_2 = connection_map_x[x2]
     
-    print("Connection Point 1:", connection_point_1, "Connection Point 2:", connection_point_2)
+    #print("Connection Point 1:", connection_point_1, "Connection Point 2:", connection_point_2)
 
     return connection_point_1, connection_point_2
 
