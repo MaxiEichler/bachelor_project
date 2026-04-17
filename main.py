@@ -1,8 +1,9 @@
 ## This is the main file that will run the program.
 from gui.app import app
-from hardware.ASA import init_GPIO, set_ASA, manualset, reset_ASA
+from hardware.ASA import init_GPIO
 from hardware.I2C import init_I2C, switch_expander
-from logic.Routing import set_path
+
+import pigpio
 
 pi = pigpio.pi()
 
